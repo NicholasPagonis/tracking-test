@@ -1,5 +1,3 @@
-version: '3.9'
-
 # Adds the simulator service
 # Use with: docker compose -f docker-compose.yml -f docker-compose.sim.yml up
 
