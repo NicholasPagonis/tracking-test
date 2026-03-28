@@ -1,0 +1,44 @@
+{
+  "devices": [
+    {
+      "device_id": "GTA_1",
+      "api_key": "gta1-demo-key-airporttracking",
+      "display_name": "Ground Transport Agent 1",
+      "platform": "android",
+      "scenario_role": "ground_transport",
+      "start_zone": "Ground Transport Hub"
+    },
+    {
+      "device_id": "GTA_2",
+      "api_key": "gta2-demo-key-airporttracking",
+      "display_name": "Ground Transport Agent 2",
+      "platform": "ios",
+      "scenario_role": "ground_transport",
+      "start_zone": "Terminal 2 (Domestic)"
+    },
+    {
+      "device_id": "TDM_1",
+      "api_key": "tdm1-demo-key-airporttracking",
+      "display_name": "Terminal Duty Manager",
+      "platform": "ios",
+      "scenario_role": "terminal_manager",
+      "start_zone": "Terminal 1 (International)"
+    },
+    {
+      "device_id": "ADM_1",
+      "api_key": "adm1-demo-key-airporttracking",
+      "display_name": "Airport Duty Manager",
+      "platform": "android",
+      "scenario_role": "airport_manager",
+      "start_zone": "Airside East"
+    },
+    {
+      "device_id": "SEC_1",
+      "api_key": "sec1-demo-key-airporttracking",
+      "display_name": "Security Supervisor 1",
+      "platform": "android",
+      "scenario_role": "security",
+      "start_zone": "Airside East"
+    }
+  ]
+}

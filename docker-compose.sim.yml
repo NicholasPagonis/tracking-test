@@ -1,0 +1,20 @@
+version: '3.9'
+
+# Adds the simulator service
+# Use with: docker compose -f docker-compose.yml -f docker-compose.sim.yml up
+
+services:
+  simulator:
+    build:
+      context: .
+      dockerfile: docker/simulator/Dockerfile
+    restart: unless-stopped
+    environment:
+      SIMULATOR_API_BASE_URL: http://api:3000
+      SIMULATOR_INTERVAL_MS: ${SIMULATOR_INTERVAL_MS:-5000}
+      SIMULATOR_SCENARIO: ${SIMULATOR_SCENARIO:-normal-ops}
+    networks:
+      - tracking
+    depends_on:
+      api:
+        condition: service_healthy

@@ -1,0 +1,40 @@
+{
+  "name": "Airport Alpha (Demo)",
+  "center": { "lat": -33.9399, "lon": 151.1753 },
+  "bounds": {
+    "north": -33.9250,
+    "south": -33.9460,
+    "east": 151.1880,
+    "west": 151.1630
+  },
+  "zones": {
+    "Terminal 1 (International)": {
+      "center": { "lat": -33.9330, "lon": 151.1760 },
+      "patrol_radius_m": 150
+    },
+    "Terminal 2 (Domestic)": {
+      "center": { "lat": -33.9375, "lon": 151.1790 },
+      "patrol_radius_m": 120
+    },
+    "Terminal 3 (Domestic)": {
+      "center": { "lat": -33.9413, "lon": 151.1790 },
+      "patrol_radius_m": 120
+    },
+    "Airside East": {
+      "center": { "lat": -33.9380, "lon": 151.1830 },
+      "patrol_radius_m": 200
+    },
+    "Airside West": {
+      "center": { "lat": -33.9380, "lon": 151.1685 },
+      "patrol_radius_m": 200
+    },
+    "Landside Arrivals": {
+      "center": { "lat": -33.9280, "lon": 151.1775 },
+      "patrol_radius_m": 150
+    },
+    "Ground Transport Hub": {
+      "center": { "lat": -33.9340, "lon": 151.1710 },
+      "patrol_radius_m": 100
+    }
+  }
+}
