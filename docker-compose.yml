@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: tracking
-      POSTGRES_USER: tracking
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - tracking
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tracking -d tracking"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   api:
     build:
       context: .
@@ -27,7 +9,7 @@ services:
       PORT: 3000
       LOG_LEVEL: info
       # Override these in .env or via docker compose --env-file
-      DATABASE_URL: postgresql://tracking:${POSTGRES_PASSWORD}@postgres:5432/tracking
+      DATABASE_URL: ${DATABASE_URL}
       API_KEY_DASHBOARD: ${API_KEY_DASHBOARD:-dev-dashboard-key}
       API_KEY_ADMIN: ${API_KEY_ADMIN:-dev-admin-key}
       STATUS_ACTIVE_SECONDS: ${STATUS_ACTIVE_SECONDS:-180}
@@ -44,9 +26,6 @@ services:
       WS_HEARTBEAT_INTERVAL_MS: 30000
     networks:
       - tracking
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health/ready"]
       interval: 30s
@@ -94,9 +73,6 @@ services:
         condition: service_healthy
       web:
         condition: service_healthy
-
-volumes:
-  db-data:
 
 networks:
   tracking:
