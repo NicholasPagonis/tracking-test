@@ -1,0 +1,31 @@
+# Dependencies — reinstalled inside the image
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+
+# Local database
+data/
+
+# Development artifacts
+apps/web/dist
+**/.cache
+**/*.log
+
+# Environment files — secrets must not leak into image layers
+.env
+.env.*
+apps/**/.env
+apps/**/.env.*
+packages/**/.env
+packages/**/.env.*
+!.env.example
+!apps/**/.env.example
+
+# Git
+.git
+.gitignore
+
+# Editor / OS
+.DS_Store
+.vscode
+*.swp
