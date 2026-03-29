@@ -4,7 +4,7 @@ const db = require('../db/connection');
 
 async function findAll(activeOnly = true) {
   let query = db('geofences').orderBy('name');
-  if (activeOnly) query = query.where('active', 1);
+  if (activeOnly) query = query.where('active', true);
   return query;
 }
 
@@ -13,8 +13,8 @@ async function findById(id) {
 }
 
 async function create(data) {
-  const [id] = await db('geofences').insert(data);
-  return findById(id);
+  const [row] = await db('geofences').insert(data).returning('id');
+  return findById(row.id);
 }
 
 async function update(id, data) {
@@ -27,8 +27,8 @@ async function remove(id) {
 }
 
 async function insertEvent({ device_id, geofence_id, event_type, lat, lon }) {
-  const [id] = await db('geofence_events').insert({ device_id, geofence_id, event_type, lat, lon });
-  return id;
+  const [row] = await db('geofence_events').insert({ device_id, geofence_id, event_type, lat, lon }).returning('id');
+  return row.id;
 }
 
 async function findEvents({ deviceId, geofenceId, from, to, limit = 100 } = {}) {

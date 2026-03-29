@@ -3,8 +3,8 @@
 const db = require('../db/connection');
 
 async function insert(record) {
-  const [id] = await db('locations').insert(record);
-  return id;
+  const [row] = await db('locations').insert(record).returning('id');
+  return row.id;
 }
 
 async function findHistory(deviceId, { from, to, limit = 500 } = {}) {
