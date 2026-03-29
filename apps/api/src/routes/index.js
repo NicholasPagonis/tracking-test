@@ -2,6 +2,7 @@
 
 const { Router } = require('express');
 const ingestRoutes = require('./ingest.routes');
+const ownTracksRoutes = require('./owntracks.routes');
 const deviceRoutes = require('./devices.routes');
 const geofenceRoutes = require('./geofences.routes');
 const healthRoutes = require('./health.routes');
@@ -9,8 +10,9 @@ const adminRoutes = require('./admin.routes');
 
 const router = Router();
 
-// Ingest endpoint — at root for Traccar Client compatibility
+// Ingest endpoints
 router.use('/ingest', ingestRoutes);
+router.use('/owntracks', ownTracksRoutes);
 
 // REST API
 router.use('/api/devices', deviceRoutes);

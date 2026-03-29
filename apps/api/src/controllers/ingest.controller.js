@@ -111,4 +111,40 @@ async function handlePost(req, res, next) {
   }
 }
 
-module.exports = { handleGet, handlePost };
+/**
+ * POST /owntracks
+ * OwnTracks HTTP mode payload:
+ *   { "_type": "location", "lat": ..., "lon": ..., "tst": <unix seconds>,
+ *     "acc": <metres>, "alt": ..., "vel": <km/h>, "cog": <bearing>, "batt": <0-100> }
+ * Non-location message types (e.g. _type: "lwt", "transition") are acknowledged and ignored.
+ */
+async function handleOwnTracks(req, res, next) {
+  try {
+    const body = req.body;
+    if (!body || body._type !== 'location') {
+      // OwnTracks expects an empty JSON array response for non-location messages
+      return res.status(200).json([]);
+    }
+
+    const deviceId = req.device.device_id;
+    const source = {
+      lat: body.lat,
+      lon: body.lon,
+      altitude: body.alt,
+      speed: body.vel != null ? body.vel / 3.6 : undefined, // km/h → m/s
+      bearing: body.cog,
+      accuracy: body.acc,
+      timestamp: body.tst, // Unix epoch seconds
+      batt: body.batt,
+    };
+
+    const payload = normalise(source);
+    await locationService.writeLocation({ deviceId, ...payload });
+    // OwnTracks expects an empty JSON array on success
+    res.status(200).json([]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { handleGet, handlePost, handleOwnTracks };

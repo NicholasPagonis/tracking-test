@@ -46,4 +46,32 @@ async function requireDeviceKey(req, res, next) {
   next();
 }
 
-module.exports = { requireDashboardKey, requireAdminKey, requireDeviceKey };
+/**
+ * OwnTracks HTTP mode auth.
+ * OwnTracks sends HTTP Basic Auth where username = device_id, password = api_key.
+ * Attaches device to req.device on success.
+ */
+async function requireOwnTracksAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    res.set('WWW-Authenticate', 'Basic realm="OwnTracks"');
+    return res.status(401).json({ error: 'Basic auth required' });
+  }
+  const decoded = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
+  const colon = decoded.indexOf(':');
+  if (colon === -1) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const username = decoded.slice(0, colon);
+  const password = decoded.slice(colon + 1);
+
+  const hash = crypto.createHash('sha256').update(password).digest('hex');
+  const device = await deviceRepo.findByApiKeyHash(hash);
+  if (!device || device.device_id !== username) {
+    return res.status(401).json({ error: 'Unknown or inactive device' });
+  }
+  req.device = device;
+  next();
+}
+
+module.exports = { requireDashboardKey, requireAdminKey, requireDeviceKey, requireOwnTracksAuth };
