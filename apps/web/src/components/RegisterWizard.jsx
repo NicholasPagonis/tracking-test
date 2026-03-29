@@ -350,32 +350,141 @@ export function RegisterWizard({ onClose, onRegistered }) {
 // ── App config panels ─────────────────────────────────────────────────────────
 
 function OwnTracksConfig({ deviceId, apiKey, platform, url }) {
+  const isIos = platform === 'ios';
+
   return (
-    <div>
-      <p style={{ color: 'var(--c-text-muted)', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
-        Install <strong style={{ color: 'var(--c-text)' }}>OwnTracks</strong> from the App Store / Play Store,
-        then go to <strong style={{ color: 'var(--c-text)' }}>Preferences → Connection</strong> and enter:
-      </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <ConfigRow label="Mode" value="HTTP" />
-        <ConfigRow label="URL" value={url} copyable mono />
-        <ConfigRow label="Username" value={deviceId} copyable />
-        <ConfigRow label="Password" value={apiKey} copyable mono />
-      </div>
+      {/* Section 1: Install */}
+      <Section title="1. Install OwnTracks">
+        <p style={prose}>
+          Download <strong style={em}>OwnTracks</strong> from the{' '}
+          {isIos ? 'App Store (search "OwnTracks")' : 'Play Store (search "OwnTracks")'}.
+          Open the app and allow location permissions — choose <strong style={em}>Always</strong> when prompted.
+        </p>
+      </Section>
 
-      <div style={{
-        marginTop: 14, padding: '10px 14px', borderRadius: 6,
-        background: '#1d4ed822', border: '1px solid #3b82f655',
-        color: '#93c5fd', fontSize: 12, lineHeight: 1.6,
-      }}>
-        <strong>Location permissions:</strong> Grant <em>Always</em> when prompted.
-        OwnTracks uses the iOS/Android motion coprocessor — it will send updates when the device moves
-        without draining battery excessively.
-      </div>
+      {/* Section 2: Connection */}
+      <Section title="2. Connection settings">
+        <p style={{ ...prose, marginBottom: 10 }}>
+          {isIos
+            ? 'Tap the top-left menu icon → Settings → tap the connection row at the top.'
+            : 'Tap the top-left menu icon → Preferences → Connection.'}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ConfigRow label="Mode" value="HTTP" />
+          <ConfigRow label="URL" value={url} copyable mono />
+          <ConfigRow label="Username" value={deviceId} copyable />
+          <ConfigRow label="Password" value={apiKey} copyable mono />
+          <ConfigRow label="Device ID" value={deviceId} copyable />
+          <ConfigRow label="Tracker ID (tid)" value={deviceId.slice(0, 2).toUpperCase()} copyable />
+        </div>
+        <p style={{ ...prose, marginTop: 8 }}>
+          <strong style={em}>Tracker ID</strong> is a 2-character label shown on maps — use initials or an abbreviation.
+        </p>
+      </Section>
+
+      {/* Section 3: Location mode */}
+      <Section title="3. Location reporting mode">
+        <p style={{ ...prose, marginBottom: 10 }}>
+          {isIos
+            ? 'In Settings, find the Monitoring section:'
+            : 'In Preferences → Reporting:'}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {isIos ? (
+            <>
+              <ModeRow
+                name="Move Mode"
+                badge="Best accuracy"
+                badgeColor="#16a34a"
+                description="Sends every ~100m or 300s. Uses GPS continuously. Recommended for active field use."
+              />
+              <ModeRow
+                name="Significant Location Change"
+                badge="Battery saver"
+                badgeColor="#2563eb"
+                description="Sends when iOS detects you've moved ~500m. Uses cell towers and WiFi. Good for less critical tracking."
+              />
+            </>
+          ) : (
+            <>
+              <ModeRow
+                name="Move Mode"
+                badge="Best accuracy"
+                badgeColor="#16a34a"
+                description="GPS-based, updates every 10 seconds. Recommended for active field use."
+              />
+              <ModeRow
+                name="Significant Changes"
+                badge="Battery saver"
+                badgeColor="#2563eb"
+                description="Checks every 15 minutes using WiFi and cell towers. Good for low-priority tracking."
+              />
+            </>
+          )}
+        </div>
+        {!isIos && (
+          <p style={{ ...prose, marginTop: 10 }}>
+            In <strong style={em}>Preferences → Reporting</strong> you can also set{' '}
+            <strong style={em}>Interval</strong> (seconds between checks) and{' '}
+            <strong style={em}>Displacement</strong> (metres moved before sending) for fine-grained control.
+          </p>
+        )}
+      </Section>
+
+      {/* Section 4: Background / permissions */}
+      <Section title="4. Background permissions">
+        {isIos ? (
+          <p style={prose}>
+            Go to <strong style={em}>Settings → OwnTracks → Location</strong> and confirm it is set to{' '}
+            <strong style={em}>Always</strong>. Without this, iOS will suspend tracking when the screen locks.
+          </p>
+        ) : (
+          <p style={prose}>
+            Go to <strong style={em}>Settings → Apps → OwnTracks → Battery</strong> and set to{' '}
+            <strong style={em}>Unrestricted</strong>. Also disable battery optimisation for OwnTracks.
+            The app will show an ongoing notification while tracking — this is required on Android 8+.
+          </p>
+        )}
+      </Section>
+
     </div>
   );
 }
+
+function Section({ title, children }) {
+  return (
+    <div>
+      <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ModeRow({ name, badge, badgeColor, description }) {
+  return (
+    <div style={{
+      padding: '10px 12px', borderRadius: 6,
+      background: 'var(--c-bg)', border: '1px solid var(--c-border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--c-text)' }}>{name}</span>
+        <span style={{
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10,
+          background: badgeColor + '22', color: badgeColor,
+          border: `1px solid ${badgeColor}55`,
+        }}>{badge}</span>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--c-text-muted)', lineHeight: 1.5 }}>{description}</div>
+    </div>
+  );
+}
+
+const prose = { color: 'var(--c-text-muted)', fontSize: 12, lineHeight: 1.6, margin: 0 };
+const em = { color: 'var(--c-text)' };
 
 function TraccarConfig({ deviceId, platform, url }) {
   return (
