@@ -1,23 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchRoles, registerDevice, pingDevice } from '../api/admin.js';
 
-const TRACCAR_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}`;
 
-const STEPS = ['Details', 'Configure', 'Test'];
+const STEPS = ['Details', 'App', 'Configure', 'Test'];
 
 const PLATFORMS = [
   { value: 'ios', label: 'iPhone (iOS)' },
   { value: 'android', label: 'Android' },
 ];
 
+const APPS = [
+  {
+    value: 'owntracks',
+    label: 'OwnTracks',
+    badge: 'Recommended',
+    badgeColor: '#16a34a',
+    description: 'Free iOS & Android app. Uses native OS location APIs for accurate background tracking.',
+    storeUrl: { ios: 'https://apps.apple.com/app/owntracks/id692424691', android: 'https://play.google.com/store/apps/details?id=org.owntracks.android' },
+  },
+  {
+    value: 'traccar',
+    label: 'Traccar Client',
+    badge: null,
+    description: 'Simple open-source client. Background accuracy on iOS is limited.',
+    storeUrl: { ios: 'https://apps.apple.com/app/traccar-client/id843156974', android: 'https://play.google.com/store/apps/details?id=org.traccar.client' },
+  },
+];
+
 function generateKey(deviceId) {
-  // Simple readable key the operator can type on a phone
   return `${deviceId.toLowerCase()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function RegisterWizard({ onClose, onRegistered }) {
   const [step, setStep] = useState(0);
   const [roles, setRoles] = useState([]);
+  const [selectedApp, setSelectedApp] = useState('owntracks');
   const [form, setForm] = useState({
     device_id: '',
     role_id: '',
@@ -28,8 +46,8 @@ export function RegisterWizard({ onClose, onRegistered }) {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [registered, setRegistered] = useState(null); // full device record from API
-  const [pingStatus, setPingStatus] = useState('waiting'); // waiting | success | timeout
+  const [registered, setRegistered] = useState(null);
+  const [pingStatus, setPingStatus] = useState('waiting');
   const [pingAge, setPingAge] = useState(null);
   const pingTimer = useRef(null);
   const pingAttempts = useRef(0);
@@ -40,16 +58,15 @@ export function RegisterWizard({ onClose, onRegistered }) {
       .catch(() => {});
   }, []);
 
-  // Auto-generate API key when device_id is filled
   useEffect(() => {
     if (form.device_id && !form.api_key) {
       setForm((f) => ({ ...f, api_key: generateKey(form.device_id) }));
     }
   }, [form.device_id]);
 
-  // Start polling for a ping when on step 2
+  // Start polling for a ping when on step 3
   useEffect(() => {
-    if (step !== 2 || !registered) return;
+    if (step !== 3 || !registered) return;
     pingAttempts.current = 0;
     setPingStatus('waiting');
 
@@ -64,7 +81,6 @@ export function RegisterWizard({ onClose, onRegistered }) {
         }
       } catch { /* keep polling */ }
 
-      // Give up after 2 minutes
       if (pingAttempts.current >= 24) {
         clearInterval(pingTimer.current);
         setPingStatus('timeout');
@@ -105,13 +121,12 @@ export function RegisterWizard({ onClose, onRegistered }) {
     }
   }
 
-  const traccarUrl = registered
-    ? `${TRACCAR_BASE}/ingest?key=${form.api_key}`
-    : '';
+  const ownTracksUrl = `${API_BASE}/owntracks`;
+  const traccarUrl = registered ? `${API_BASE}/ingest?key=${form.api_key}` : '';
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{ width: 520, maxWidth: '95vw' }}>
+      <div style={{ width: 540, maxWidth: '95vw' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
@@ -123,7 +138,6 @@ export function RegisterWizard({ onClose, onRegistered }) {
           <button onClick={onClose} style={btnGhost}>✕</button>
         </div>
 
-        {/* Step indicator */}
         <StepBar current={step} steps={STEPS} />
 
         {/* ── Step 0: Details ── */}
@@ -131,10 +145,10 @@ export function RegisterWizard({ onClose, onRegistered }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
             {errors._global && <ErrorBanner msg={errors._global} />}
 
-            <Field label="Device identifier" error={errors.device_id} hint="Matches what you'll type in Traccar Client — e.g. TDM_1">
+            <Field label="Device identifier" error={errors.device_id} hint="A unique ID for this device — e.g. TDM_1">
               <input
                 style={inputStyle(errors.device_id)}
-                placeholder="e.g. TDM_2"
+                placeholder="e.g. TDM_1"
                 value={form.device_id}
                 onChange={(e) => set('device_id', e.target.value.trim())}
               />
@@ -143,7 +157,7 @@ export function RegisterWizard({ onClose, onRegistered }) {
             <Field label="Display name" error={errors.display_name}>
               <input
                 style={inputStyle(errors.display_name)}
-                placeholder="e.g. Terminal Duty Manager 2"
+                placeholder="e.g. Terminal Duty Manager 1"
                 value={form.display_name}
                 onChange={(e) => set('display_name', e.target.value)}
               />
@@ -176,7 +190,7 @@ export function RegisterWizard({ onClose, onRegistered }) {
               </Field>
             </div>
 
-            <Field label="API key" error={errors.api_key} hint="Auto-generated — you can change it. This goes in the Traccar URL.">
+            <Field label="API key" error={errors.api_key} hint="Auto-generated — used to authenticate this device.">
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   style={{ ...inputStyle(errors.api_key), flex: 1, fontFamily: 'monospace', fontSize: 12 }}
@@ -209,47 +223,101 @@ export function RegisterWizard({ onClose, onRegistered }) {
           </div>
         )}
 
-        {/* ── Step 1: Configure Traccar ── */}
+        {/* ── Step 1: Choose app ── */}
         {step === 1 && registered && (
           <div style={{ marginTop: 20 }}>
             <p style={{ color: 'var(--c-text-muted)', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
-              Device <strong style={{ color: 'var(--c-text)' }}>{registered.device_id}</strong> is registered.
-              Now configure Traccar Client on the phone with the settings below.
+              Device <strong style={{ color: 'var(--c-text)' }}>{registered.device_id}</strong> registered.
+              Choose the tracking app to install on the phone.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <ConfigRow label="Device identifier" value={registered.device_id} copyable />
-              <ConfigRow label="Server URL" value={traccarUrl} copyable mono />
-              <ConfigRow label="Location accuracy" value="Highest" />
-              <ConfigRow label="Interval (seconds)" value={form.platform === 'ios' ? '30' : '5'} />
-              <ConfigRow label="Distance" value="Disabled" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {APPS.map((app) => (
+                <button
+                  key={app.value}
+                  onClick={() => setSelectedApp(app.value)}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 14,
+                    padding: '14px 16px', borderRadius: 8, cursor: 'pointer',
+                    textAlign: 'left', width: '100%',
+                    background: selectedApp === app.value ? '#1d4ed822' : 'var(--c-bg)',
+                    border: `2px solid ${selectedApp === app.value ? '#3b82f6' : 'var(--c-border)'}`,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                    border: `2px solid ${selectedApp === app.value ? '#3b82f6' : 'var(--c-border)'}`,
+                    background: selectedApp === app.value ? '#3b82f6' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {selectedApp === app.value && (
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--c-text)' }}>{app.label}</span>
+                      {app.badge && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10,
+                          background: app.badgeColor + '22', color: app.badgeColor,
+                          border: `1px solid ${app.badgeColor}55`,
+                        }}>
+                          {app.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--c-text-muted)', lineHeight: 1.5 }}>
+                      {app.description}
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
-
-            {form.platform === 'ios' && (
-              <div style={{
-                marginTop: 16, padding: '10px 14px', borderRadius: 6,
-                background: '#92400e22', border: '1px solid #92400e66',
-                color: '#fbbf24', fontSize: 12, lineHeight: 1.6,
-              }}>
-                <strong>iPhone note:</strong> Grant <em>Always</em> location permission, not just While Using. iOS will still throttle background updates — keep Traccar foregrounded during this test.
-              </div>
-            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
               <button style={btnPrimary} onClick={() => setStep(2)}>
+                Continue →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: Configure ── */}
+        {step === 2 && registered && (
+          <div style={{ marginTop: 20 }}>
+            {selectedApp === 'owntracks' ? (
+              <OwnTracksConfig
+                deviceId={registered.device_id}
+                apiKey={form.api_key}
+                platform={form.platform}
+                url={ownTracksUrl}
+              />
+            ) : (
+              <TraccarConfig
+                deviceId={registered.device_id}
+                platform={form.platform}
+                url={traccarUrl}
+              />
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+              <button style={btnSecondary} onClick={() => setStep(1)}>← Back</button>
+              <button style={btnPrimary} onClick={() => setStep(3)}>
                 I've configured the app → Test connection
               </button>
             </div>
           </div>
         )}
 
-        {/* ── Step 2: Live ping test ── */}
-        {step === 2 && registered && (
+        {/* ── Step 3: Test ── */}
+        {step === 3 && registered && (
           <div style={{ marginTop: 20 }}>
             <PingPanel
               status={pingStatus}
               deviceId={registered.device_id}
               ageSeconds={pingAge}
+              appName={APPS.find((a) => a.value === selectedApp)?.label}
               onRetry={() => {
                 pingAttempts.current = 0;
                 setPingStatus('waiting');
@@ -257,8 +325,8 @@ export function RegisterWizard({ onClose, onRegistered }) {
             />
 
             {pingStatus === 'success' && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20, gap: 10 }}>
-                <button style={btnSecondary} onClick={() => { onRegistered?.(); onClose(); }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+                <button style={btnPrimary} onClick={() => { onRegistered?.(); onClose(); }}>
                   Done
                 </button>
               </div>
@@ -266,7 +334,7 @@ export function RegisterWizard({ onClose, onRegistered }) {
 
             {pingStatus === 'timeout' && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20, gap: 10 }}>
-                <button style={btnSecondary} onClick={() => setStep(1)}>← Back</button>
+                <button style={btnSecondary} onClick={() => setStep(2)}>← Back</button>
                 <button style={btnSecondary} onClick={() => { onRegistered?.(); onClose(); }}>
                   Skip — close anyway
                 </button>
@@ -279,9 +347,69 @@ export function RegisterWizard({ onClose, onRegistered }) {
   );
 }
 
+// ── App config panels ─────────────────────────────────────────────────────────
+
+function OwnTracksConfig({ deviceId, apiKey, platform, url }) {
+  return (
+    <div>
+      <p style={{ color: 'var(--c-text-muted)', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
+        Install <strong style={{ color: 'var(--c-text)' }}>OwnTracks</strong> from the App Store / Play Store,
+        then go to <strong style={{ color: 'var(--c-text)' }}>Preferences → Connection</strong> and enter:
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <ConfigRow label="Mode" value="HTTP" />
+        <ConfigRow label="URL" value={url} copyable mono />
+        <ConfigRow label="Username" value={deviceId} copyable />
+        <ConfigRow label="Password" value={apiKey} copyable mono />
+      </div>
+
+      <div style={{
+        marginTop: 14, padding: '10px 14px', borderRadius: 6,
+        background: '#1d4ed822', border: '1px solid #3b82f655',
+        color: '#93c5fd', fontSize: 12, lineHeight: 1.6,
+      }}>
+        <strong>Location permissions:</strong> Grant <em>Always</em> when prompted.
+        OwnTracks uses the iOS/Android motion coprocessor — it will send updates when the device moves
+        without draining battery excessively.
+      </div>
+    </div>
+  );
+}
+
+function TraccarConfig({ deviceId, platform, url }) {
+  return (
+    <div>
+      <p style={{ color: 'var(--c-text-muted)', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
+        Install <strong style={{ color: 'var(--c-text)' }}>Traccar Client</strong> from the App Store / Play Store,
+        then configure it with the settings below.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <ConfigRow label="Device identifier" value={deviceId} copyable />
+        <ConfigRow label="Server URL" value={url} copyable mono />
+        <ConfigRow label="Location accuracy" value="Highest" />
+        <ConfigRow label="Interval (seconds)" value={platform === 'ios' ? '30' : '5'} />
+        <ConfigRow label="Distance" value="Disabled" />
+      </div>
+
+      {platform === 'ios' && (
+        <div style={{
+          marginTop: 14, padding: '10px 14px', borderRadius: 6,
+          background: '#92400e22', border: '1px solid #92400e66',
+          color: '#fbbf24', fontSize: 12, lineHeight: 1.6,
+        }}>
+          <strong>iPhone note:</strong> Grant <em>Always</em> location permission. iOS throttles background
+          updates for Traccar Client — keep the app foregrounded for reliable tracking.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function PingPanel({ status, deviceId, ageSeconds, onRetry }) {
+function PingPanel({ status, deviceId, ageSeconds, appName, onRetry }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -299,7 +427,7 @@ function PingPanel({ status, deviceId, ageSeconds, onRetry }) {
           Listening for <strong>{deviceId}</strong> · {elapsed}s elapsed
         </div>
         <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginTop: 4 }}>
-          Open Traccar Client, start tracking, and send a location update.
+          Open {appName}, start tracking, and send a location update.
         </div>
       </div>
     );
@@ -322,7 +450,6 @@ function PingPanel({ status, deviceId, ageSeconds, onRetry }) {
     );
   }
 
-  // timeout
   return (
     <div style={{ textAlign: 'center', padding: '30px 0' }}>
       <div style={{ fontSize: 48 }}>⏱</div>
@@ -331,9 +458,9 @@ function PingPanel({ status, deviceId, ageSeconds, onRetry }) {
       </div>
       <div style={{ color: 'var(--c-text-muted)', fontSize: 12, marginTop: 8, lineHeight: 1.7 }}>
         Check that:<br />
-        • Traccar Client is running and tracking is started<br />
-        • The server URL includes the correct <code>?key=</code> parameter<br />
-        • The device identifier matches exactly<br />
+        • {appName} is running and tracking is started<br />
+        • Location permission is set to <em>Always</em><br />
+        • The credentials were entered correctly<br />
         • Your phone has internet access and can reach the server
       </div>
       <button style={{ ...btnSecondary, marginTop: 16 }} onClick={onRetry}>
