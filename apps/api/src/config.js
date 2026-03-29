@@ -32,7 +32,7 @@ const config = {
   logLevel: optional('LOG_LEVEL', 'info'),
 
   db: {
-    path: optional('DB_PATH', './data/tracking.db'),
+    url: optional('DATABASE_URL', ''),
   },
 
   auth: {

@@ -32,7 +32,7 @@ async function findAll({ roleCode, status } = {}) {
   if (roleCode) query = query.where('r.code', roleCode.toUpperCase());
   if (status) query = query.where('s.status', status);
 
-  return query.where('d.is_active', 1).orderBy('d.device_id');
+  return query.where('d.is_active', true).orderBy('d.device_id');
 }
 
 async function findById(deviceId) {
@@ -66,7 +66,7 @@ async function findById(deviceId) {
 }
 
 async function findByApiKeyHash(hash) {
-  return db('devices').where('api_key_hash', hash).where('is_active', 1).first();
+  return db('devices').where('api_key_hash', hash).where('is_active', true).first();
 }
 
 async function upsertStatus(deviceId, { lat, lon, speed_ms, bearing_deg, battery_pct, accuracy_m, zone_name, last_seen_utc, source_timestamp_utc, status }) {
@@ -91,7 +91,7 @@ async function update(deviceId, fields) {
 }
 
 async function create({ device_id, role_id, display_name, platform, api_key_hash, notes }) {
-  await db('devices').insert({ device_id, role_id, display_name, platform, api_key_hash, notes, is_active: 1 });
+  await db('devices').insert({ device_id, role_id, display_name, platform, api_key_hash, notes, is_active: true });
   await db('device_status').insert({ device_id, status: 'offline' }).onConflict('device_id').merge();
   return findById(device_id);
 }

@@ -61,7 +61,7 @@ exports.seed = async function (knex) {
     platform,
     api_key_hash: crypto.createHash('sha256').update(api_key).digest('hex'),
     notes,
-    is_active: 1,
+    is_active: true,
   }));
 
   await knex('devices').insert(rows);

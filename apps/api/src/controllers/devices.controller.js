@@ -28,7 +28,7 @@ async function updateDevice(req, res, next) {
     const allowed = {};
     if (display_name !== undefined) allowed.display_name = display_name;
     if (notes !== undefined) allowed.notes = notes;
-    if (is_active !== undefined) allowed.is_active = is_active ? 1 : 0;
+    if (is_active !== undefined) allowed.is_active = Boolean(is_active);
 
     if (Object.keys(allowed).length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });

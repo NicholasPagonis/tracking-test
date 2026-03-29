@@ -32,7 +32,7 @@ async function ready(req, res, next) {
 
 async function systemStatus(req, res, next) {
   try {
-    const [deviceCount] = await db('devices').count('id as count').where('is_active', 1);
+    const [deviceCount] = await db('devices').count('id as count').where('is_active', true);
     const [activeCount] = await db('device_status').count('device_id as count').where('status', 'active');
     const [staleCount] = await db('device_status').count('device_id as count').where('status', 'stale');
     const [offlineCount] = await db('device_status').count('device_id as count').where('status', 'offline');
@@ -41,12 +41,12 @@ async function systemStatus(req, res, next) {
     res.json({
       uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
       devices: {
-        total: deviceCount.count,
-        active: activeCount.count,
-        stale: staleCount.count,
-        offline: offlineCount.count,
+        total: Number(deviceCount.count),
+        active: Number(activeCount.count),
+        stale: Number(staleCount.count),
+        offline: Number(offlineCount.count),
       },
-      location_records: locationCount.count,
+      location_records: Number(locationCount.count),
       thresholds: {
         active_seconds: config.status.activeSeconds,
         stale_seconds: config.status.staleSeconds,

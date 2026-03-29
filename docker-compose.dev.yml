@@ -12,7 +12,6 @@ services:
     volumes:
       - ./apps/api/src:/app/apps/api/src:ro
       - ./packages:/app/packages:ro
-      - dev-db:/data
     ports:
       - "3000:3000"
     command: ["node", "--watch", "apps/api/src/index.js"]
@@ -23,6 +22,3 @@ services:
       dockerfile: docker/web/Dockerfile
     ports:
       - "5173:80"
-
-volumes:
-  dev-db:

@@ -23,9 +23,6 @@ WORKDIR /app
 
 COPY --from=builder /app ./
 
-# Data directory (SQLite file mounted as volume)
-RUN mkdir -p /data && chown node:node /data
-
 USER node
 
 EXPOSE 3000
