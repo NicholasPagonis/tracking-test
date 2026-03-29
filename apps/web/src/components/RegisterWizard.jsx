@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchRoles, registerDevice, pingDevice } from '../api/admin.js';
 
-// LAN IP is used in the Traccar URL shown to the operator (the phone needs the real IP, not localhost)
-const LAN_IP = import.meta.env.VITE_LAN_IP || window.location.hostname;
-const API_PORT = import.meta.env.VITE_API_PORT || '3000';
-const TRACCAR_BASE = `http://${LAN_IP}:${API_PORT}`;
+const TRACCAR_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}`;
 
 const STEPS = ['Details', 'Configure', 'Test'];
 
@@ -337,7 +334,7 @@ function PingPanel({ status, deviceId, ageSeconds, onRetry }) {
         • Traccar Client is running and tracking is started<br />
         • The server URL includes the correct <code>?key=</code> parameter<br />
         • The device identifier matches exactly<br />
-        • Your phone is on the same network as this server
+        • Your phone has internet access and can reach the server
       </div>
       <button style={{ ...btnSecondary, marginTop: 16 }} onClick={onRetry}>
         Try again
