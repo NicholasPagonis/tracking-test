@@ -90,4 +90,23 @@ async function update(deviceId, fields) {
   return findById(deviceId);
 }
 
-module.exports = { findAll, findById, findByApiKeyHash, upsertStatus, updateStatus, findActiveOrStale, update };
+async function create({ device_id, role_id, display_name, platform, api_key_hash, notes }) {
+  await db('devices').insert({ device_id, role_id, display_name, platform, api_key_hash, notes, is_active: 1 });
+  await db('device_status').insert({ device_id, status: 'offline' }).onConflict('device_id').merge();
+  return findById(device_id);
+}
+
+async function findAllRoles() {
+  return db('roles').orderBy('code');
+}
+
+// Return the received_timestamp_utc of the most recent ingest for a device
+async function latestIngestTime(deviceId) {
+  return db('locations')
+    .where('device_id', deviceId)
+    .orderBy('received_timestamp_utc', 'desc')
+    .select('received_timestamp_utc')
+    .first();
+}
+
+module.exports = { findAll, findById, findByApiKeyHash, upsertStatus, updateStatus, findActiveOrStale, update, create, findAllRoles, latestIngestTime };

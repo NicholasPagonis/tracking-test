@@ -14,15 +14,17 @@ function createApp() {
   // Security headers — relaxed CSP for dashboard serving
   app.use(helmet({ contentSecurityPolicy: false }));
 
-  // CORS — configured for dashboard origin
+  // CORS — wildcard for LAN/PoC use; lock down for production
+  const corsOrigin = config.cors.origin === '*' ? true : config.cors.origin;
   app.use(cors({
-    origin: config.cors.origin,
+    origin: corsOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-API-Key', 'X-Device-Key'],
   }));
 
   app.use(express.json({ limit: '100kb' }));
-  app.use(express.urlencoded({ extended: false }));
+  // Traccar Client iOS POSTs application/x-www-form-urlencoded
+  app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 
   // Request logging (skip health checks to reduce noise)
   app.use((req, res, next) => {

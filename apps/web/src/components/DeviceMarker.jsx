@@ -37,38 +37,49 @@ function buildIcon(device) {
   return L.divIcon({ html, className: '', iconSize: [36, 44], iconAnchor: [18, 44], popupAnchor: [0, -46] });
 }
 
+function FlyTo({ lat, lon }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([lat, lon], Math.max(map.getZoom(), 16), { duration: 0.8 });
+  }, [lat, lon, map]);
+  return null;
+}
+
 export function DeviceMarker({ device, selected, onClick }) {
   if (!device.lat || !device.lon) return null;
 
   const icon = buildIcon(device);
 
   return (
-    <Marker
-      position={[device.lat, device.lon]}
-      icon={icon}
-      eventHandlers={{ click: () => onClick?.(device) }}
-      zIndexOffset={device.status === 'active' ? 1000 : device.status === 'stale' ? 500 : 0}
-    >
-      <Popup minWidth={220}>
-        <div style={{ fontFamily: 'var(--font)', fontSize: 12, lineHeight: 1.6 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{device.display_name}</div>
-          <div style={{ color: '#888', marginBottom: 8 }}>{device.role_label} · {device.platform}</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              <Row label="Role ID" value={device.device_id} />
-              <Row label="Status" value={<StatusPill status={device.status} />} />
-              <Row label="Zone" value={device.zone_name || '—'} />
-              <Row label="Last fix" value={formatTimestamp(device.source_timestamp_utc)} />
-              <Row label="Age" value={ageLabel(device.last_seen_utc)} />
-              <Row label="Speed" value={speedKph(device.speed_ms) != null ? `${speedKph(device.speed_ms)} km/h` : '—'} />
-              <Row label="Accuracy" value={device.accuracy_m != null ? `±${Math.round(device.accuracy_m)}m` : '—'} />
-              <Row label="Battery" value={device.battery_pct != null ? `${Math.round(device.battery_pct)}%` : '—'} />
-              <Row label="Platform" value={device.platform} />
-            </tbody>
-          </table>
-        </div>
-      </Popup>
-    </Marker>
+    <>
+      {selected && <FlyTo lat={device.lat} lon={device.lon} />}
+      <Marker
+        position={[device.lat, device.lon]}
+        icon={icon}
+        eventHandlers={{ click: () => onClick?.(device) }}
+        zIndexOffset={device.status === 'active' ? 1000 : device.status === 'stale' ? 500 : 0}
+      >
+        <Popup minWidth={220}>
+          <div style={{ fontFamily: 'var(--font)', fontSize: 12, lineHeight: 1.6 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{device.display_name}</div>
+            <div style={{ color: '#888', marginBottom: 8 }}>{device.role_label} · {device.platform}</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                <Row label="Role ID" value={device.device_id} />
+                <Row label="Status" value={<StatusPill status={device.status} />} />
+                <Row label="Zone" value={device.zone_name || '—'} />
+                <Row label="Last fix" value={formatTimestamp(device.source_timestamp_utc)} />
+                <Row label="Age" value={ageLabel(device.last_seen_utc)} />
+                <Row label="Speed" value={speedKph(device.speed_ms) != null ? `${speedKph(device.speed_ms)} km/h` : '—'} />
+                <Row label="Accuracy" value={device.accuracy_m != null ? `±${Math.round(device.accuracy_m)}m` : '—'} />
+                <Row label="Battery" value={device.battery_pct != null ? `${Math.round(device.battery_pct)}%` : '—'} />
+                <Row label="Platform" value={device.platform} />
+              </tbody>
+            </table>
+          </div>
+        </Popup>
+      </Marker>
+    </>
   );
 }
 

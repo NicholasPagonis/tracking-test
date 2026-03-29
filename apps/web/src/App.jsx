@@ -11,13 +11,15 @@ import { TrailLayer } from './components/TrailLayer.jsx';
 import { DeviceList } from './components/DeviceList.jsx';
 import { FilterPanel } from './components/FilterPanel.jsx';
 import { StatusSummary } from './components/StatusSummary.jsx';
+import { RegisterWizard } from './components/RegisterWizard.jsx';
+import { LocationHistoryModal } from './components/LocationHistoryModal.jsx';
 
 const CENTER_LAT = parseFloat(import.meta.env.VITE_MAP_CENTER_LAT || '-33.9399');
 const CENTER_LON = parseFloat(import.meta.env.VITE_MAP_CENTER_LON || '151.1753');
 const DEFAULT_ZOOM = parseInt(import.meta.env.VITE_MAP_DEFAULT_ZOOM || '14', 10);
 
 export default function App() {
-  const { devices, loading, error, lastSync } = useDevices();
+  const { devices, loading, error, lastSync, refresh } = useDevices();
   const { geofences } = useGeofences();
 
   const [selectedId, setSelectedId] = useState(null);
@@ -27,6 +29,8 @@ export default function App() {
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showWizard, setShowWizard] = useState(false);
+  const [activityDevice, setActivityDevice] = useState(null);
 
   const selectedDevice = useMemo(() => devices.find((d) => d.device_id === selectedId), [devices, selectedId]);
 
@@ -60,6 +64,17 @@ export default function App() {
           <MapToggle active={showZones} onClick={() => setShowZones(!showZones)} label="Zones" />
           <MapToggle active={showTrails} onClick={() => setShowTrails(!showTrails)} label="Trails" />
           <MapToggle active={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)} label="Sidebar" />
+          <div style={{ width: 1, height: 20, background: 'var(--c-border)' }} />
+          <button
+            onClick={() => setShowWizard(true)}
+            style={{
+              fontSize: 11, padding: '4px 12px', borderRadius: 4,
+              border: '1px solid #16a34a', background: '#16a34a22',
+              color: '#4ade80', cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            + Register device
+          </button>
         </div>
       </header>
 
@@ -98,6 +113,7 @@ export default function App() {
                 devices={devices}
                 selectedId={selectedId}
                 onSelect={handleSelectDevice}
+                onOpenActivity={setActivityDevice}
                 filterRole={filterRole}
                 filterStatus={filterStatus}
                 search={search}
@@ -169,6 +185,20 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {showWizard && (
+        <RegisterWizard
+          onClose={() => setShowWizard(false)}
+          onRegistered={() => { refresh(); setShowWizard(false); }}
+        />
+      )}
+
+      {activityDevice && (
+        <LocationHistoryModal
+          device={activityDevice}
+          onClose={() => setActivityDevice(null)}
+        />
+      )}
     </div>
   );
 }

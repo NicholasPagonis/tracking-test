@@ -6,6 +6,8 @@
     "packages/*"
   ],
   "scripts": {
+    "start:api": "npm run start --workspace=apps/api",
+    "start:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces --if-present",

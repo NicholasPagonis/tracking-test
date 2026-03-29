@@ -64,7 +64,9 @@ button {
   border-top: 8px solid currentColor;
 }
 
-scrollbar-width: thin;
+@keyframes spin { to { transform: rotate(360deg); } }
+
+* { scrollbar-width: thin; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 2px; }

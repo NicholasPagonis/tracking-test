@@ -30,8 +30,8 @@ async function start() {
 
   attachWebSocket(server);
 
-  server.listen(config.port, () => {
-    logger.info({ port: config.port, env: config.env }, 'API server started');
+  server.listen(config.port, '0.0.0.0', () => {
+    logger.info({ port: config.port, host: '0.0.0.0', env: config.env }, 'API server started');
   });
 
   // Background jobs

@@ -67,15 +67,45 @@ async function handleGet(req, res, next) {
 }
 
 /**
- * POST /ingest — JSON body
- * Body: { id, lat, lon, timestamp, altitude, speed, bearing, accuracy, batt }
+ * POST /ingest
+ * Handles multiple client formats:
+ *   1. Traccar Client iOS — application/x-www-form-urlencoded flat fields
+ *   2. Background Geolocation app — JSON body with rootProperty=location,
+ *      nested as { location: { coords: { latitude, longitude, ... }, battery: {...}, timestamp } }
+ *   3. Plain JSON flat body
+ * Merge query params + body so fields work regardless of how they arrive.
  */
 async function handlePost(req, res, next) {
   try {
     const deviceId = req.device.device_id;
-    const payload = normalise(req.body);
-    const device = await locationService.writeLocation({ deviceId, ...payload });
-    res.status(200).json({ ok: true, device_id: deviceId, status: device?.status });
+    let source;
+
+    const body = req.body;
+
+    // Background Geolocation sends { location: { coords: { latitude, longitude, ... }, battery, timestamp } }
+    if (body && body.location && body.location.coords) {
+      const loc = body.location;
+      const coords = loc.coords;
+      source = {
+        lat: coords.latitude,
+        lon: coords.longitude,
+        altitude: coords.altitude,
+        speed: coords.speed,
+        bearing: coords.heading,
+        accuracy: coords.accuracy,
+        timestamp: loc.timestamp,
+        batt: loc.battery ? loc.battery.level * 100 : undefined,
+        ...req.query,
+      };
+    } else {
+      // Traccar Client (urlencoded or flat JSON) — merge query + body
+      source = { ...req.query, ...body };
+    }
+
+    logger.debug({ contentType: req.headers['content-type'], source }, 'Ingest POST');
+    const payload = normalise(source);
+    await locationService.writeLocation({ deviceId, ...payload });
+    res.status(200).send('OK');
   } catch (err) {
     next(err);
   }
