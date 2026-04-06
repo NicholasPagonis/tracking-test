@@ -11,5 +11,6 @@ const router = Router();
 //   Username: <device_id>
 //   Password: <api_key>
 router.post('/', requireOwnTracksAuth, handleOwnTracks);
+router.post('/api/v1/location-events', requireOwnTracksAuth, handleOwnTracks);
 
 module.exports = router;
