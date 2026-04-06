@@ -74,4 +74,32 @@ async function requireOwnTracksAuth(req, res, next) {
   next();
 }
 
-module.exports = { requireDashboardKey, requireAdminKey, requireDeviceKey, requireOwnTracksAuth };
+/**
+ * OwnTracks auth — optional variant for wizard/onboarding.
+ * If Basic Auth credentials are present, validates them and attaches req.device.
+ * If no Authorization header is sent, allows the request through with req.device = null.
+ */
+async function optionalOwnTracksAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    req.device = null;
+    return next();
+  }
+  const decoded = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
+  const colon = decoded.indexOf(':');
+  if (colon === -1) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const username = decoded.slice(0, colon);
+  const password = decoded.slice(colon + 1);
+
+  const hash = crypto.createHash('sha256').update(password).digest('hex');
+  const device = await deviceRepo.findByApiKeyHash(hash);
+  if (!device || device.device_id !== username) {
+    return res.status(401).json({ error: 'Unknown or inactive device' });
+  }
+  req.device = device;
+  next();
+}
+
+module.exports = { requireDashboardKey, requireAdminKey, requireDeviceKey, requireOwnTracksAuth, optionalOwnTracksAuth };
