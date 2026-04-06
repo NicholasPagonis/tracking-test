@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const { requireOwnTracksAuth } = require('../middleware/auth.middleware');
 const { handleOwnTracks } = require('../controllers/ingest.controller');
+const { health } = require('../controllers/health.controller');
 
 const router = Router();
 
@@ -12,5 +13,6 @@ const router = Router();
 //   Password: <api_key>
 router.post('/', requireOwnTracksAuth, handleOwnTracks);
 router.post('/api/v1/location-events', requireOwnTracksAuth, handleOwnTracks);
+router.get('/api/v1/health', health);
 
 module.exports = router;
