@@ -18,6 +18,7 @@ const APPS = [
     badgeColor: '#16a34a',
     description: 'Free iOS & Android app. Uses native OS location APIs for accurate background tracking.',
     storeUrl: { ios: 'https://apps.apple.com/app/owntracks/id692424691', android: 'https://play.google.com/store/apps/details?id=org.owntracks.android' },
+    platforms: ['ios', 'android'],
   },
   {
     value: 'traccar',
@@ -25,6 +26,16 @@ const APPS = [
     badge: null,
     description: 'Simple open-source client. Background accuracy on iOS is limited.',
     storeUrl: { ios: 'https://apps.apple.com/app/traccar-client/id843156974', android: 'https://play.google.com/store/apps/details?id=org.traccar.client' },
+    platforms: ['ios', 'android'],
+  },
+  {
+    value: 'trackingtestapp',
+    label: 'TrackingTestApp',
+    badge: 'iOS only',
+    badgeColor: '#2563eb',
+    description: 'Custom iOS app with adaptive send intervals, offline queuing, and motion-aware filtering. Requires direct install.',
+    storeUrl: null,
+    platforms: ['ios'],
   },
 ];
 
@@ -181,7 +192,14 @@ export function RegisterWizard({ onClose, onRegistered }) {
                 <select
                   style={inputStyle(errors.platform)}
                   value={form.platform}
-                  onChange={(e) => set('platform', e.target.value)}
+                  onChange={(e) => {
+                    const newPlatform = e.target.value;
+                    set('platform', newPlatform);
+                    const currentApp = APPS.find((a) => a.value === selectedApp);
+                    if (currentApp && !currentApp.platforms.includes(newPlatform)) {
+                      setSelectedApp('owntracks');
+                    }
+                  }}
                 >
                   {PLATFORMS.map((p) => (
                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -232,7 +250,7 @@ export function RegisterWizard({ onClose, onRegistered }) {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {APPS.map((app) => (
+              {APPS.filter((app) => app.platforms.includes(form.platform)).map((app) => (
                 <button
                   key={app.value}
                   onClick={() => setSelectedApp(app.value)}
@@ -293,6 +311,12 @@ export function RegisterWizard({ onClose, onRegistered }) {
                 apiKey={form.api_key}
                 platform={form.platform}
                 url={ownTracksUrl}
+              />
+            ) : selectedApp === 'trackingtestapp' ? (
+              <TrackingTestAppConfig
+                deviceId={registered.device_id}
+                apiKey={form.api_key}
+                url={`${API_BASE}/owntracks`}
               />
             ) : (
               <TraccarConfig
@@ -512,6 +536,63 @@ function TraccarConfig({ deviceId, platform, url }) {
           updates for Traccar Client — keep the app foregrounded for reliable tracking.
         </div>
       )}
+    </div>
+  );
+}
+
+function TrackingTestAppConfig({ deviceId, apiKey, url }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+      <Section title="1. Install the app">
+        <p style={prose}>
+          Install <strong style={em}>TrackingTestApp</strong> on your iPhone via TestFlight or a direct IPA install.
+          Open the app and grant location permission — choose <strong style={em}>Always</strong> when prompted.
+        </p>
+      </Section>
+
+      <Section title="2. Open Settings in the app">
+        <p style={{ ...prose, marginBottom: 10 }}>
+          Tap the <strong style={em}>Settings</strong> tab at the bottom of the app, then enter the following values:
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ConfigRow label="Server URL" value={url} copyable mono />
+          <ConfigRow label="Device ID" value={deviceId} copyable />
+          <ConfigRow label="API Key" value={apiKey} copyable mono />
+        </div>
+        <p style={{ ...prose, marginTop: 8 }}>
+          The <strong style={em}>Server URL</strong> is the same endpoint used by OwnTracks — the app posts JSON location events here.
+        </p>
+      </Section>
+
+      <Section title="3. Start tracking">
+        <p style={{ ...prose, marginBottom: 10 }}>
+          Return to the <strong style={em}>Home</strong> tab and tap <strong style={em}>Start Tracking</strong>.
+          The status indicator will turn green and the map will show your position once the first location event is transmitted.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ModeRow
+            name="Moving"
+            badge="Higher frequency"
+            badgeColor="#16a34a"
+            description="Sends based on movingIntervalSeconds when motion is detected. First fix is always transmitted immediately."
+          />
+          <ModeRow
+            name="Stationary"
+            badge="Battery saver"
+            badgeColor="#2563eb"
+            description="Sends at a longer stationaryIntervalSeconds interval when the device is not moving. Near-identical points are deduplicated."
+          />
+        </div>
+      </Section>
+
+      <Section title="4. Background permissions">
+        <p style={prose}>
+          Go to <strong style={em}>Settings → Privacy & Security → Location Services → TrackingTestApp</strong> and confirm it is set to <strong style={em}>Always</strong>.
+          Without this, iOS will suspend tracking when the screen locks. The app queues events offline and flushes them automatically when connectivity returns.
+        </p>
+      </Section>
+
     </div>
   );
 }
